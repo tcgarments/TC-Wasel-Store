@@ -1,0 +1,768 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=3,user-scalable=yes" />
+  <title>متجر التطبيق — TC Wasel</title>
+
+  <!-- Cairo font -->
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    // Import the functions you need from the SDKs you need
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js';
+    import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js';
+    window.firebaseApp = { initializeApp, getFirestore, collection, addDoc, getDocs, updateDoc, doc, serverTimestamp };
+  </script>
+
+  <style>
+    :root{
+      --bg:#0f0b0b;
+      --card:#140909;
+      --accent:#b30021;            /* deep crimson */
+      --accent-2:#ff2b2b;          /* bright */
+      --glow: rgba(179,0,33,0.18);
+      --muted:#bfb6b6;
+      --glass: rgba(255,255,255,0.03);
+      --success:#27ae60;
+      --danger:#ff3b3b;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:"Cairo",sans-serif;
+      background:linear-gradient(180deg,#070406 0%, #120607 50%, #1a0708 100%);
+      color:#fff;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      line-height:1.5;
+      padding-bottom:60px;
+    }
+
+    /* ---------- header / hero ---------- */
+    .hero{
+      display:flex;
+      gap:24px;
+      align-items:center;
+      justify-content:space-between;
+      padding:28px 6%;
+      max-width:1200px;
+      margin:18px auto;
+    }
+    .hero-left{
+      flex:1;
+      min-width:260px;
+    }
+    .app-badge{
+      display:flex;
+      gap:14px;
+      align-items:center;
+    }
+    .app-icon{
+      width:96px;height:96px;border-radius:22px;
+      background:linear-gradient(135deg,var(--accent),var(--accent-2));
+      box-shadow:0 8px 30px var(--glow), inset 0 -6px 20px rgba(0,0,0,0.25);
+      display:flex;align-items:center;justify-content:center;
+      transform:translateZ(0);
+    }
+    .app-icon svg{width:60px;height:60px;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.3))}
+    .app-title{
+      display:flex;flex-direction:column;gap:4px;
+    }
+    .app-name{font-size:22px;font-weight:800;letter-spacing:0.4px}
+    .app-sub{color:var(--muted);font-size:13px;margin-top:2px}
+
+    .cta-row{display:flex;gap:12px;align-items:center;margin-top:14px;flex-wrap:wrap;}
+    .btn {
+      background:linear-gradient(90deg,var(--accent),var(--accent-2));
+      color:#fff;border:none;padding:10px 16px;border-radius:12px;
+      font-weight:700;cursor:pointer;box-shadow:0 8px 30px var(--glow);
+      transition:transform .18s ease, box-shadow .18s;
+    }
+    .btn:hover{transform:translateY(-4px)}
+    .btn.ghost{
+      background:transparent;border:1px solid rgba(255,255,255,0.06);
+      color:var(--muted);font-weight:600;box-shadow:none;
+    }
+    .btn.secondary{
+      background:linear-gradient(90deg,#444,#222);
+      color:#fff;
+    }
+    .meta{
+      margin-top:12px;color:var(--muted);font-size:13px;display:flex;gap:12px;flex-wrap:wrap;
+    }
+    .badge{background:rgba(255,255,255,0.03);padding:6px 10px;border-radius:999px;font-size:13px;color:var(--muted)}
+
+    /* rating - محسن مع hover و animation */
+    .rating {
+      display:flex;align-items:center;gap:8px;margin-top:8px;
+    }
+    .stars{display:flex;gap:4px; position: relative;}
+    .star{
+      width:20px;height:20px;display:inline-block;cursor:pointer;
+      transition: all 0.2s ease;
+      transform: scale(1);
+    }
+    .star:hover { transform: scale(1.1); }
+    .star.filled { color: #ffd166; text-shadow: 0 0 5px #ffd166; }
+    .star.half { color: #ffd166; }
+    .rating-num{color:var(--muted);font-weight:600; margin-right: 5px;}
+
+    /* review form */
+    .review-form {
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border: 1px solid rgba(255,255,255,0.04);
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+    .review-form input, .review-form textarea {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.02);
+      color: #fff;
+      font-family: inherit;
+    }
+    .review-form textarea { resize: vertical; min-height: 80px; }
+
+    /* reply form */
+    .reply-form {
+      margin-top: 8px;
+      padding: 12px;
+      background: rgba(255,255,255,0.02);
+      border-radius: 8px;
+      border-left: 3px solid var(--accent);
+    }
+    .reply-form input { width: calc(100% - 80px); }
+    .reply-form button { width: 70px; padding: 8px; }
+
+    /* hero-right: screenshots preview */
+    .hero-right{width:420px;max-width:46%;display:flex;justify-content:center}
+    .shelf{
+      width:260px; height:520px; border-radius:22px; overflow:hidden;
+      background:linear-gradient(180deg,#0b0b0b 0%, #130606 100%);
+      box-shadow:0 18px 60px rgba(0,0,0,0.6), inset 0 -6px 20px rgba(255,255,255,0.02);
+      transform:rotateY(-10deg) translateZ(0);
+      transition:transform .4s ease;
+    }
+    .shelf img{width:100%;height:100%;object-fit:cover;display:block}
+
+    /* hover enlarge */
+    .shelf:hover{transform:rotateY(0deg) translateY(-6px) scale(1.02)}
+
+    /* ---------- content area ---------- */
+    .content{
+      max-width:1200px;margin:18px auto;padding:14px 6%;display:grid;grid-template-columns:1fr 360px;gap:24px;
+    }
+
+    /* left column: description, features */
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border:1px solid rgba(255,255,255,0.04);
+      padding:18px;border-radius:14px;
+      backdrop-filter: blur(6px);
+    }
+    h3.section{margin:0 0 10px 0;color:#ffdede;font-weight:700}
+    p.lead{color:#e9d1d1;margin:6px 0 12px;font-size:15px}
+
+    .features{display:flex;flex-wrap:wrap;gap:10px}
+    .feature{
+      flex:1 1 45%;min-width:150px;
+      background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.02);
+      display:flex;gap:8px;align-items:center;
+    }
+    .feature .ico{width:36px;height:36px;border-radius:10px;background:rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center}
+    .feature p{margin:0;font-size:14px;color:var(--muted)}
+
+    /* reviews */
+    .reviews{margin-top:12px}
+    .review{padding:12px;border-radius:10px;background:linear-gradient(180deg,rgba(0,0,0,0.15),rgba(0,0,0,0.06));margin-bottom:10px}
+    .rev-head{display:flex;justify-content:space-between;gap:8px;align-items:center}
+    .username{font-weight:700;color:#ffdede}
+    .rev-text{color:#d9c7c7;margin-top:8px;font-size:14px}
+    .reply { margin-left: 20px; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 6px; font-size: 13px; color: var(--muted); }
+
+    /* right column: sticky box */
+    .side{
+      position:sticky;top:18px;
+      display:flex;flex-direction:column;gap:12px;
+    }
+    .side .price{
+      font-size:18px;color:#fff;font-weight:800;
+    }
+    .side .small{color:var(--muted);font-size:13px}
+    .side .pill{display:flex;gap:8px;align-items:center;padding:10px;border-radius:12px;background:linear-gradient(90deg,#2a0004,#3a0006);border:1px solid rgba(255,255,255,0.03)}
+
+    /* screenshots carousel */
+    .carousel{display:flex;gap:10px;overflow:hidden;padding:6px}
+    .shot{min-width:100px;height:200px;border-radius:10px;background:#111;border:1px solid rgba(255,255,255,0.03);overflow:hidden}
+    .shot img{width:100%;height:100%;object-fit:cover;display:block}
+
+    /* lightbox */
+    .lightbox{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.8);z-index:9999}
+    .lightbox.show{display:flex}
+    .lightbox img{max-width:92%;max-height:88%;border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,0.6)}
+
+    /* floating actions */
+    .fab{
+      position:fixed;left:20px;bottom:24px;background:linear-gradient(90deg,var(--accent),var(--accent-2));
+      color:#fff;padding:12px 16px;border-radius:999px;box-shadow:0 12px 40px var(--glow);cursor:pointer;border:none;font-weight:800;
+      display:flex;gap:8px;align-items:center;z-index:1000;
+    }
+
+    /* footer */
+    footer.app-footer{margin-top:40px;padding:18px;text-align:center;color:var(--muted);font-size:13px}
+
+    /* responsive */
+    @media (max-width:1000px){
+      .hero{flex-direction:column;gap:18px}
+      .hero-right{max-width:100%;width:320px}
+      .content{grid-template-columns:1fr; padding:18px 6%}
+      .side{position:relative}
+    }
+    @media (max-width:420px){
+      .shelf{width:210px;height:420px}
+      .shot{min-width:86px;height:180px}
+    }
+
+    /* small animations */
+    .pulse{
+      animation:pulse 2s infinite;
+    }
+    @keyframes pulse{
+      0%{box-shadow:0 6px 20px rgba(179,0,33,0.12)}
+      50%{box-shadow:0 14px 40px rgba(179,0,33,0.18)}
+      100%{box-shadow:0 6px 20px rgba(179,0,33,0.12)}
+    }
+
+    /* subtle entrance */
+    .entrance{transform:translateY(10px);opacity:0;animation:enter .6s forwards}
+    @keyframes enter{to{transform:none;opacity:1}}
+	
+	.app-logo {
+  width: 90px;
+  height: 90px;
+  border-radius: 20px;
+  object-fit: cover;
+  box-shadow: 0 0 15px rgba(255, 0, 0, 0.4);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.pulse:hover .app-logo {
+  transform: scale(1.05);
+  box-shadow: 0 0 25px rgba(255, 0, 0, 0.7);
+}
+
+    /* تحسين النجوم: animation للـ hover */
+    @keyframes starGlow {
+      0% { text-shadow: 0 0 0 #ffd166; }
+      50% { text-shadow: 0 0 10px #ffd166; }
+      100% { text-shadow: 0 0 0 #ffd166; }
+    }
+    .star:hover { animation: starGlow 0.3s ease; }
+
+    /* فيديو يوتيوب embed */
+    .video-container {
+      position: relative;
+      width: 100%;
+      height: 0;
+      padding-bottom: 56.25%; /* نسبة 16:9 */
+      margin: 20px 0;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    .video-container iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+      border-radius: 10px;
+    }
+
+  </style>
+</head>
+<body>
+
+ 
+
+  <!-- HERO -->
+  <header class="hero entrance">
+    <div class="hero-left">
+      <div class="app-badge">
+        <div class="app-icon pulse" title="TC Wasel">
+  <img src="hrrr.png" alt="TC Wasel Logo" class="app-logo">
+</div>
+
+
+        <div class="app-title">
+		
+		
+		 
+		
+          <div class="app-name">TC Wasel</div>
+		 
+          <div class="app-sub">تطبيق عرض المرتبات وبيانات البونص بطريقة سريعة وآمنة ويعتبر تطبيق شامل من T&C Garments Company
+		  
+		  <hr>
+		  
+		  📱 مستخدمي <strong>iPhone</strong>:
+    افتح الموقع من <strong>Safari</strong>، ثم اضغط على
+    <span class="share-icon">⬆️</span> في شريط الأدوات بالأسفل،
+    واختر <strong>إضافة إلى الشاشة الرئيسية</strong> <em>(Add to Home Screen)</em> لتثبيت التطبيق باسم <b>TC Wasel</b>.
+		  
+		  </div>
+
+          <div class="rating" aria-label="تقييم التطبيق">
+            <div class="stars" id="stars">
+              <!-- stars filled via JS -->
+              <span class="star" data-value="1">☆</span>
+              <span class="star" data-value="2">☆</span>
+              <span class="star" data-value="3">☆</span>
+              <span class="star" data-value="4">☆</span>
+              <span class="star" data-value="5">☆</span>
+            </div>
+            <div class="rating-num" id="ratingNum">4.9</div>
+          </div>
+		  
+
+          <div class="cta-row">
+            <button class="btn" id="installBtn">تحميل للاندرويد ⬇️</button>
+			<button class="btn" id="installBtn2">تحميل للايفون ⬇️</button>
+			
+          </div>
+		  
+		  
+		  <!-- الرسالة الخاصة بمتصفح iPhone -->
+ 
+		    <div class="ios-tip" id="iosTip">
+    📱 مستخدمي <strong>iPhone</strong>:
+    افتح الموقع من <strong>Safari</strong>، ثم اضغط على
+    <span class="share-icon">⬆️</span> في شريط الأدوات بالأسفل،
+    واختر <strong>إضافة إلى الشاشة الرئيسية</strong> <em>(Add to Home Screen)</em> لتثبيت التطبيق باسم <b>TC Wasel</b>.
+  </div>
+
+
+  <style>
+    .ios-tip {
+      margin-top: 16px;
+      padding: 12px 14px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      color: #ddd;
+      font-size: 14px;
+      line-height: 1.6;
+      text-align: center;
+      backdrop-filter: blur(6px);
+      display: none; /* يظهر فقط على iOS */
+    }
+    .ios-tip strong {
+      color: #ffdede;
+    }
+    .ios-tip .share-icon {
+      font-size: 18px;
+      vertical-align: middle;
+    }
+  </style>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      if (isIOS && isSafari) {
+        document.getElementById('iosTip').style.display = 'block';
+      }
+    });
+  </script>
+		  
+		  
+
+          <div class="meta">
+            <span class="badge">الإصدار 1.2.3</span>
+            <span class="badge">حجم 15 MB</span>
+            <span class="badge">Android • iOS • Desktop</span>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-right">
+      <div class="shelf" id="mainShot">
+        <!-- placeholder screenshot -->
+        <img src="images/head.jpg" alt="screenshot">
+      </div>
+    </div>
+	
+	
+	
+
+
+	
+	
+	
+	
+  </header>
+  
+  
+  
+  
+  
+
+  <!-- MAIN CONTENT -->
+  <main class="content">
+    <section>
+      <div class="card entrance" style="animation-delay:0.08s">
+        <h3 class="section">عن التطبيق</h3>
+        <p class="lead">TC Wasel يتيح لك عرض تفاصيل المرتب والبونص بشكل آمن وسريع. شاهد كشوفاتك، حمّل نسخة، وشاركها مع الإدارة أو دعم الفني مباشرةً.</p>
+
+        <h3 class="section">المميزات</h3>
+        <div class="features">
+          <div class="feature"><div class="ico">💼</div><p>عرض كشف المرتب بالتفصيل</p></div>
+          <div class="feature"><div class="ico">🔒</div><p>حماية البيانات وتأمين الوصول</p></div>
+          <div class="feature"><div class="ico">⚡</div><p>سريع وخفيف على الأجهزة</p></div>
+        </div>
+
+        <h3 class="section" style="margin-top:14px">لقطات الشاشة</h3>
+        <div class="carousel" id="carousel">
+          <div class="shot"><img src="images/1.jpg" alt=""></div>
+		  <div class="shot"><img src="images/2.jpg" alt=""></div>
+		  <div class="shot"><img src="images/3.jpg" alt=""></div>
+		  <div class="shot"><img src="images/4.jpg" alt=""></div>
+		  
+        </div>
+		<div class="carousel" id="carousel">
+          
+		  <div class="shot"><img src="images/5.jpg" alt=""></div>
+		  <div class="shot"><img src="images/6.jpg" alt=""></div>
+		  <div class="shot"><img src="images/7.jpg" alt=""></div>
+		  <div class="shot"><img src="images/8.jpg" alt=""></div>
+		  
+        </div>
+		<div class="carousel" id="carousel">
+          
+		  <div class="shot"><img src="images/9.jpg" alt=""></div>
+		  <div class="shot"><img src="images/10.jpg" alt=""></div>
+        </div>
+        <small class="meta" style="margin-top:8px">اضغط على أي لقطة لعرضها بحجم كامل</small>
+
+        <!-- قسم الفيديو التوضيحي من يوتيوب (embed داخلي) -->
+        <h3 class="section" style="margin-top:20px">فيديو توضيحي</h3>
+        <p class="lead" style="margin-bottom:15px">شاهد فيديو توضيحي سريع لكيفية استخدام التطبيق:</p>
+        <div class="video-container">
+          <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ?rel=0&modestbranding=1&playsinline=1&autoplay=0&mute=0" 
+                  title="فيديو توضيحي لـ TC Wasel" 
+                  frameborder="0" 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                  allowfullscreen>
+          </iframe>
+        </div>
+        <small class="meta" style="margin-top:8px; display:block; text-align:center; opacity:0.8;">هذا الفيديو مجرد وسيلة بسيطه للشرح لكن اذا واجهت مشكلة لاتتردد في التواصل بالدعم الفني علي واتساب</small>
+
+      </div>
+    </section>
+
+    <aside class="side">
+      <div class="card entrance" style="animation-delay:0.15s">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <div>
+            <div class="price">مجاني</div>
+            <div class="small">اخر تحديث: Oct 2025</div>
+          </div>
+          <div class="pill">
+            <div style="font-weight:800;color:#ffdede" id="avgRating">4.8</div>
+            <div style="color:var(--muted);font-size:13px">/5 (<span id="totalReviews">2</span>)</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="card entrance" style="animation-delay:0.2s">
+        <h3 class="section">تفاصيل إضافية</h3>
+        <p class="small" style="color:var(--muted)">
+          نظام التشغيل: Android 6.0+ ، iOS 12+. مطوّر: Kadysoft. سياسة الخصوصية متاحة ضمن التطبيق.
+        </p>
+      </div>
+    </aside>
+  </main>
+
+  <footer class="app-footer">
+    &copy; 2026 Kadysoft — Ahmed Elkady ✨
+  </footer>
+
+  <!-- lightbox -->
+  <div class="lightbox" id="lightbox" role="dialog" aria-hidden="true" aria-label="عرض لقطة">
+    <img src="" alt="screenshot full" id="lbImg">
+  </div>
+
+  <script type="module">
+    // ---------- small helpers ----------
+    const $ = q=>document.querySelector(q);
+    const $$ = q=>Array.from(document.querySelectorAll(q));
+
+    let db; // Firestore instance
+    let reviews = []; // array للـ reviews
+    let currentReviewRating = 0;
+
+    // Firebase Config - غيّر هذه القيم بتلك من مشروعك على Firebase Console
+    const firebaseConfig = {
+    apiKey: "AIzaSyAJoTTzjDxMVPRSASIALfOmtJL3Vfc0S7M",
+    authDomain: "tc-wasel-reviews.firebaseapp.com",
+    projectId: "tc-wasel-reviews",
+    storageBucket: "tc-wasel-reviews.firebasestorage.app",
+    messagingSenderId: "832136769513",
+    appId: "1:832136769513:web:2dcb4307bfb9e873392578",
+    measurementId: "G-43NZEYQ714"
+  };
+
+    // Initialize Firebase
+    const app = firebaseApp.initializeApp(firebaseConfig);
+    db = firebaseApp.getFirestore(app);
+
+    // دالة لتحميل الـ reviews من Firestore
+    async function loadReviews() {
+      try {
+        const querySnapshot = await firebaseApp.getDocs(firebaseApp.collection(db, "reviews"));
+        reviews = [];
+        querySnapshot.forEach((doc) => {
+          reviews.push({ id: doc.id, ...doc.data() });
+        });
+        renderReviews();
+        updateAverageRating();
+      } catch (err) {
+        console.error('خطأ في تحميل الـ reviews:', err);
+        alert('خطأ في الاتصال بقاعدة البيانات. تأكد من إعداد Firebase.');
+      }
+    }
+
+    // دالة لإضافة review جديدة
+    async function addReview(reviewData) {
+      try {
+        const docRef = await firebaseApp.addDoc(firebaseApp.collection(db, "reviews"), {
+          ...reviewData,
+          timestamp: firebaseApp.serverTimestamp()
+        });
+        console.log('تم إضافة review بـ ID:', docRef.id);
+        await loadReviews(); // إعادة تحميل للعرض
+        return docRef.id;
+      } catch (err) {
+        console.error('خطأ في إضافة review:', err);
+        alert('خطأ في حفظ المراجعة. تأكد من إعداد Firebase.');
+      }
+    }
+
+    // دالة لإضافة رد على review
+    async function addReply(reviewId, replyData) {
+      try {
+        const reviewRef = firebaseApp.doc(db, "reviews", reviewId);
+        await firebaseApp.updateDoc(reviewRef, {
+          replies: firebaseApp.arrayUnion(replyData) // إضافة للـ array
+        });
+        await loadReviews(); // إعادة تحميل
+      } catch (err) {
+        console.error('خطأ في إضافة الرد:', err);
+        alert('خطأ في حفظ الرد.');
+      }
+    }
+
+    // دالة لحساب وتحديث المتوسط
+    function updateAverageRating() {
+      if (reviews.length === 0) {
+        $('#avgRating').textContent = '0';
+        $('#totalReviews').textContent = '0';
+        paintStars(0);
+        return;
+      }
+      const avg = (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1);
+      const total = reviews.length;
+      $('#avgRating').textContent = avg;
+      $('#totalReviews').textContent = total;
+      paintStars(parseFloat(avg));
+    }
+
+    // دالة لعرض الـ reviews
+    function renderReviews() {
+      const container = $('#reviewsContainer');
+      container.innerHTML = '';
+      reviews.forEach((review) => {
+        const div = document.createElement('div');
+        div.className = 'review';
+        const starsHtml = '⭐️'.repeat(review.rating);
+        div.innerHTML = `
+          <div class="rev-head">
+            <div class="username">${review.name || 'مجهول'}</div>
+            <div class="small">${starsHtml}</div>
+          </div>
+          <div class="rev-text">${review.text}</div>
+          ${review.replies ? review.replies.map(reply => `
+            <div class="reply">
+              <strong>الرد:</strong> ${reply.text} <small>— ${reply.by || 'الإدارة'} (${reply.date || ''})</small>
+            </div>
+          `).join('') : ''}
+          <button class="btn ghost" onclick="showReplyForm('${review.id}')" style="margin-top:8px; padding:6px 12px; font-size:12px;">رد</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    // دالة لعرض form الرد (مع ID)
+    window.showReplyForm = async function(reviewId) {
+      const review = reviews.find(r => r.id === reviewId);
+      const replyText = prompt(`رد على مراجعة ${review.name || 'مجهول'}:`);
+      if (replyText && replyText.trim()) {
+        const replyData = { 
+          text: replyText.trim(), 
+          by: 'الإدارة', 
+          date: new Date().toISOString().split('T')[0] 
+        };
+        await addReply(reviewId, replyData);
+      }
+    };
+
+    // دالة للـ stars التفاعلية (محسنة مع hover و half-stars)
+    function paintStars(r, starsEl = '#stars') {
+      const stars = $$(starsEl + ' .star');
+      stars.forEach((s, i) => {
+        const v = +s.dataset.value;
+        if (v <= Math.floor(r)) {
+          s.innerHTML = '★';
+          s.classList.add('filled');
+        } else if (v === Math.ceil(r) && r % 1 !== 0) {
+          s.innerHTML = '⭐'; // half star approx
+          s.classList.remove('filled');
+        } else {
+          s.innerHTML = '☆';
+          s.classList.remove('filled');
+        }
+      });
+      if (starsEl === '#stars') $('#ratingNum').textContent = r.toFixed(1);
+    }
+
+    // event للـ stars في الـ form (مع hover effect)
+    $$('#reviewStars .star').forEach(s => {
+      s.addEventListener('mouseover', () => {
+        paintStars(+s.dataset.value, '#reviewStars');
+      });
+      s.addEventListener('mouseout', () => {
+        paintStars(currentReviewRating, '#reviewStars');
+      });
+      s.addEventListener('click', () => {
+        currentReviewRating = +s.dataset.value;
+        paintStars(currentReviewRating, '#reviewStars');
+        $('#selectedRating').textContent = currentReviewRating;
+      });
+    });
+
+    // submit الـ review
+    $('#submitReview').addEventListener('click', async () => {
+      const name = $('#reviewName').value.trim() || 'مجهول';
+      const text = $('#reviewText').value.trim();
+      if (currentReviewRating === 0 || !text) {
+        alert('يرجى اختيار تقييم واكتب تعليقًا!');
+        return;
+      }
+      const newReview = {
+        name,
+        rating: currentReviewRating,
+        text,
+        date: new Date().toISOString().split('T')[0]
+      };
+      await addReview(newReview);
+      // مسح الـ form
+      $('#reviewName').value = '';
+      $('#reviewText').value = '';
+      currentReviewRating = 0;
+      paintStars(0, '#reviewStars');
+      $('#selectedRating').textContent = '0';
+      alert('تم حفظ المراجعة بنجاح! ستظهر للجميع تلقائيًا.');
+    });
+
+    // ---------- screenshots lightbox ----------
+    $$('#carousel .shot img').forEach(img=>{
+      img.style.cursor='zoom-in';
+      img.addEventListener('click', (e)=>{
+        const lb = $('#lightbox');
+        $('#lbImg').src = e.target.src.replace('/360x780/','/720x1280/'); // try bigger
+        lb.classList.add('show');
+        lb.setAttribute('aria-hidden','false');
+      });
+    });
+    $('#lightbox').addEventListener('click', ()=> {
+      $('#lightbox').classList.remove('show');
+      $('#lightbox').setAttribute('aria-hidden','true');
+    });
+
+    // ---------- shelf rotation interactive ----------
+    const shelf = $('#mainShot');
+    shelf.addEventListener('mousemove', e=>{
+      const rect = shelf.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width;
+      const rx = (x - 0.5) * 16;
+      shelf.style.transform = `rotateY(${ -rx }deg) translateZ(0)`;
+    });
+    shelf.addEventListener('mouseleave', ()=> shelf.style.transform='rotateY(-10deg)');
+
+    // ---------- carousel touch scroll (swipe) ----------
+    (function makeSwipe(elSelector){
+      const el = document.querySelector(elSelector);
+      if(!el) return;
+      let startX=0, scrollLeft=0, isDown=false;
+      el.addEventListener('pointerdown', e=>{
+        isDown=true; startX=e.pageX - el.offsetLeft; scrollLeft=el.scrollLeft; el.style.cursor='grabbing';
+      });
+      el.addEventListener('pointermove', e=>{
+        if(!isDown) return;
+        const x = e.pageX - el.offsetLeft; const walk = (x - startX);
+        el.scrollLeft = scrollLeft - walk;
+      });
+      ['pointerup','pointercancel','pointerleave'].forEach(ev=> el.addEventListener(ev, ()=>{isDown=false; el.style.cursor='grab'}));
+    })('.carousel');
+
+    // ---------- download / install simulation ----------
+    $('#installBtn').addEventListener('click', ()=> {
+      window.location.href = 'https://www.dropbox.com/scl/fi/u5iphvkre3qqmiv6zp8na/TC-Wasel.apk?rlkey=q49lxdfy1xfrsrshhmhy6mscw&st=tto9ivw4&dl=1';
+    });
+    $('#installBtn2').addEventListener('click', ()=> {
+      window.location.href = 'https://tandcgarments.github.io/TC_Wasel_App/';
+    });
+    
+
+    // simple entrance animation delay
+    document.querySelectorAll('.entrance').forEach((el,i)=> el.style.animationDelay = (0.05*i)+'s');
+
+    // accessibility: keyboard close lightbox
+    document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ $('#lightbox').classList.remove('show'); }});
+
+    // تحميل الـ reviews عند التحميل
+    document.addEventListener('DOMContentLoaded', loadReviews);
+    // رسم النجوم الأولي
+    paintStars(4.8);
+  </script>
+  
+  
+  <script>
+  document.getElementById("installBtn").addEventListener("click", () => {
+    // ضع هنا رابط تحميل APK للأندرويد
+    window.location.href = 'https://www.dropbox.com/scl/fi/u5iphvkre3qqmiv6zp8na/TC-Wasel.apk?rlkey=q49lxdfy1xfrsrshhmhy6mscw&st=mh7s5okm&dl=1';
+  });
+
+  document.getElementById("installBtn2").addEventListener("click", () => {
+    // لمستخدمي iPhone، غالبًا التطبيق ويب فقط أو عن طريق Safari
+    alert("📱 لمستخدمي iPhone:\nافتح الموقع من Safari، ثم اختر 'إضافة إلى الشاشة الرئيسية' لتثبيت التطبيق.");
+	window.location.href = 'https://tandcgarments.github.io/TC_Wasel_App/';
+  });
+</script>
+
+  
+  
+</body>
+</html>
